@@ -10,5 +10,10 @@ Default dataset location is "./dataset". You can change the --dpath default valu
 To load pretrained model, run:
 > python main.py --restore_ckpt ./checkpoints/model_name.pth
 
+To test yout pretrained model and get .csv result file, run:
+> python main.py --restore_ckpt ./checkpoints/model_name.pth --test_mode 1 
+
+Do not change nway, kshot, query numbers!
+
 Do not change nway, kshot, query numbers! 
 
