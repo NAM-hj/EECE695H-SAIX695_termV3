@@ -1,19 +1,16 @@
 # README
 
-To run the code, run:
+Modified by NHJ originated from 
+https://github.com/Byungki-Kwon/EECE695H-SAIX695_termV2
 
-> python main.py 
+***The best result is recorded with mymode 3***
 
-You will need to download the datasets yourself from http://www.vision.caltech.edu/visipedia/CUB-200-2011.html.
-Default dataset location is "./dataset". You can change the --dpath default values as you want.
+To Train, run:
 
-To load pretrained model, run:
-> python main.py --restore_ckpt ./checkpoints/model_name.pth
+> python main.py --mymode 3
 
-To test yout pretrained model and get .csv result file, run:
-> python main.py --restore_ckpt ./checkpoints/model_name.pth --test_mode 1 
+To Test, run:
 
-Do not change nway, kshot, query numbers!
+> python main.py --restore_ckpt ./checkpoints/10000_v3.pth --test_mode 1 --mymode 3
 
-Do not change nway, kshot, query numbers! 
-
+**This model shows 91.425% Test accuracy on Given Testset of CUB (https://www.kaggle.com/c/byungkikwon/leaderboard)**
