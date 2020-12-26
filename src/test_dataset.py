@@ -51,8 +51,11 @@ class CUB(Dataset):
             img = np.stack([img] * 3, 2)
 
         img = Image.fromarray(img, mode='RGB')
-        img = transforms.Resize((512, 512), Image.BILINEAR)(img)
-        img = transforms.CenterCrop((400, 400))(img)
+        # According to torchvision.models, I should resize image to 256 and cropt it in 224
+        # https://pytorch.org/docs/stable/torchvision/models.html --> Find "The process" with ctrl+F
+        img = transforms.Resize((256, 256), Image.BILINEAR)(img) 
+        img = transforms.CenterCrop((224, 224))(img) 
+
         img = transforms.RandomHorizontalFlip()(img)
         img = transforms.ToTensor()(img)
         img = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(img)

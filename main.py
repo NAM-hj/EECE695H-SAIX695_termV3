@@ -6,14 +6,14 @@ from torch.utils.data import DataLoader
 from src.dataset import CUB as Dataset
 from src.sampler import Sampler
 from src.train_sampler import Train_Sampler
-from src.utils import count_acc, Averager, csv_write, square_euclidean_metric
-from model import FewShotModel
+from src.utils import count_acc, Averager, csv_write, loss_mode, get_lr
+from model import FewShotModel, FewShotModel_ensemble
 
 from src.test_dataset import CUB as Test_Dataset
 from src.test_sampler import Test_Sampler
 " User input value "
 TOTAL = 10000  # total step of training
-PRINT_FREQ = 50  # frequency of print loss and accuracy at training step
+PRINT_FREQ = 20  # frequency of print loss and accuracy at training step
 VAL_FREQ = 100  # frequency of model eval on validation dataset
 SAVE_FREQ = 100  # frequency of saving model
 TEST_SIZE = 200  # fixed
@@ -52,6 +52,9 @@ def Test_phase(model, args, k):
                 
             pred is torch.tensor with size [20] and the each component value is zero to four
             """
+            # The loss_mode function is in "src/utils.py"
+            logits = loss_mode(args, model, data_shot, data_query, labels = None)
+            pred = torch.argmax(logits, dim=1)
 
             # save your prediction as StudentID_Name.csv file
             csv.add(pred)
@@ -77,9 +80,9 @@ def train(args):
 
     """ TODO 1.a """
     " Make your own model for Few-shot Classification in 'model.py' file."
-
     # model setting
-    model = FewShotModel()
+    #model = FewShotModel()
+    model = FewShotModel_ensemble()
 
     """ TODO 1.a END """
 
@@ -96,10 +99,12 @@ def train(args):
 
     """ TODO 1.b (optional) """
     " Set an optimizer or scheduler for Few-shot classification (optional) "
+    #optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-    # Default optimizer setting
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
+    optimizer = torch.optim.SGD(model.parameters(), lr=4e-3, momentum=0.9)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.95)
+    ce_loss_fn = torch.nn.CrossEntropyLoss().cuda()
+    print('Loss mode: ', args.mymode)
     """ TODO 1.b (optional) END """
 
     tl = Averager()  # save average loss
@@ -140,9 +145,10 @@ def train(args):
                 loss : torch scalar tensor which used for updating your model
                 logits : A value to measure accuracy and loss
             """
-
-            YOUR CODE
-
+            # The loss_mode function is in "src/utils.py"
+            logits, loss = loss_mode(args, model, data_shot, data_query, labels)
+                
+            
             """ TODO 2 END """
 
             acc = count_acc(logits, labels)
@@ -152,11 +158,12 @@ def train(args):
 
             loss.backward()
             optimizer.step()
-
+            scheduler.step() # @@!!@@ added by nam
             proto = None; logits = None; loss = None
 
         if (i+1) % PRINT_FREQ == 0:
-            print('train {}, loss={:.4f} acc={:.4f}'.format(i+1, tl.item(), ta.item()))
+
+            print('train {}, lr={:.4e} loss={:.4f} acc={:.4f}'.format(i+1, get_lr(optimizer), tl.item(), ta.item()))
 
             # initialize loss and accuracy mean
             tl = None
@@ -199,8 +206,8 @@ def train(args):
                             loss : torch scalar tensor which used for updating your model
                             logits : A value to measure accuracy and loss
                         """
-
-                        YOUR CODE
+                        # The loss_mode function is in "src/utils.py"
+                        logits, loss = loss_mode(args, model, data_shot, data_query, labels)
 
                         """ TODO 2 END """
 
@@ -242,6 +249,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpus', type=int, nargs='+', default=1)
     parser.add_argument('--test_mode', type=int, default=0, help="if you want to test the model, change the value to 1")
 
+    parser.add_argument('--mymode', type=int, default=-1, help="if you want to test the model, change the value to 1")
     args = parser.parse_args()
 
     if not os.path.isdir('checkpoints'):
